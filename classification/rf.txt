@@ -1,0 +1,1 @@
+{'problem_type': 'binary_classification', 'rf__max_features': ['sqrt', 'log2', None], 'rf__n_estimators': [100, 250, 500, 1000],'rf__class_weight': 'balanced', 'scoring': 'balanced_accuracy', 'metric_list': ['accuracy', 'balanced_accuracy', 'roc_auc']}
