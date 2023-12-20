@@ -1,5 +1,6 @@
 # Stimulus Selection for Predictions of Phenotypes
 Stimulus selection influences prediction of individual phenotypes in naturalistic conditions
+https://www.biorxiv.org/content/10.1101/2023.12.07.570273v1
 
 ## virtual environment for prediction/classification analyses
 ```
