@@ -8,27 +8,24 @@ from julearn.utils import configure_logging
 ## configure_logging_julearn
 configure_logging(level='INFO')
 
-
-
-
 ############## read in arguments 
 
-################################### read from bash ###########################################
+################################### read from bash when running on cluster ###########################################
 # Project folder
 wkdir = sys.argv[1] # wkdir = '/Users/xli/Desktop/Github/TOPF_evaluation'
 file_subject_list = sys.argv[2] # wkdir+'/data/HCP/subject_list.txt'
 
 # result root dir
-r_rootdir = sys.argv[3] # '/Users/xli/Desktop/Github/TOPF_evaluation/results/classification/'
+r_rootdir = sys.argv[3] # '/Users/xli/Desktop/Github/TOPF_evaluation/results/classification/feature_before_norm/'
 
 # adding core_functions folder to the system path and import the TOPF module (TOPF.py)
 sys.path.insert(0, wkdir+'/code/core_functions')
 import TOPF
 
 
-dataset = sys.argv[4] # 'hcp268'
+dataset = sys.argv[4] # 'hcp436'
 nroi = int(sys.argv[5])  # number of rois/features
-seed = int(sys.argv[6])
+permseed = int(sys.argv[6]) # this is the seed for permutation test, not for cv split!!
 movieind = sys.argv[7] # or run ind, ranging from 1-14 or 1-4, or a custom id
 cmp_name = sys.argv[8] # "moviewise" or "wholerun" or a custom path to the dataframe
 phenostr = sys.argv[9] # 'Gender'
@@ -62,8 +59,45 @@ if cutntr <=0:
     nstart = 0
 else:
     ntr = cutntr # cut to cutntr
-################################### read from bash ###########################################
+################################### read from bash when running on cluster ###########################################
 
+################################### uncomment this block if run locally ##############################################
+
+# # Project folder
+# wkdir = '/Users/xli/Desktop/Github/TOPF_evaluation'
+
+# # adding core_functions folder to the system path and import the TOPF module (TOPF.py)
+# sys.path.insert(0, wkdir+'/code/core_functions')
+# import TOPF
+
+# dataset = 'hcp268'
+# nroi = 10 # number of rois/features
+# movieind = 2 # or run ind, ranging from 1-14 or 1-4
+# cmp_name = 'moviewise' # or "wholerun"
+# phenostr = 'Gender'
+# file_subject_list = wkdir+'/data/HCP/subject_list.txt'
+
+# ntr = None  # full length or cut to a specified length (TRs) if an int, e.g., ntr=180 
+# feature_type ='singlePC' # or combinedPC
+# pcind = 1 # which PC or to the largest PC index when combinedPC
+# seed = 0
+
+# clfname = 'svm' # which classifier (see all availabel classifiers here: https://juaml.github.io/julearn/main/steps.html)
+# k_outer = 2 # number of folds for outer cv
+# k_inner = 2 # number of folds for inner cv
+
+# setting_file = '/Users/xli/Desktop/Github/TOPF_evaluation/code/2-classification/svm_settings.txt'
+# # probtype = 'binary_classification'
+# # #param_keys = ['svm__kernel', 'svm__C','svm__probability','scoring','weight']
+# # #param_values = [['linear','rbf'],[2**-1,2**0,2**1],True,'balanced_accuracy']
+# # param_keys = ['svm__kernel', 'svm__C','scoring']
+# # param_values = [['linear','rbf'],[2**-1,2**0,2**1],'balanced_accuracy']
+# # metric_list = ['accuracy', 'balanced_accuracy', 'roc_auc'] # scores to be calculated for now (25. Oct. 2022)
+
+# # result root dir
+# r_rootdir = '/Users/xli/Desktop/Github/TOPF_evaluation/results/classification/'
+
+###################################^ if run locally ^##############################################
 
 
 ############################ HCP dataset specific info #######################
@@ -124,19 +158,46 @@ else:
 
 #^^^^^^^^^^^^^^^^^^^^^ HCP dataset specific info ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    
 
-##################### set up result directory structure and file names
-if nstart ==0:
-    rfolder = f'{dataset}/{phenostr}/{cmp_name}_cut_{str(ntr)}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
-else:
-    rfolder = f'{dataset}/{phenostr}/{cmp_name}_cut_{str(ntr)}_from{nstart}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
+##################### set up result directory structure and file names (should be the one created previously when using non-perm data)
+# if nstart ==0:
+#     rfolder = f'{dataset}/{phenostr}/{cmp_name}_cut_{str(ntr)}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
+# else:
+#     rfolder = f'{dataset}/{phenostr}/{cmp_name}_cut_{str(ntr)}_from{nstart}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
 
+# rdir = r_rootdir+rfolder
+
+# if not os.path.exists(f"{rdir}"):
+#     os.makedirs(f"{rdir}")
+
+# Result_struct = TOPF.init_result_dir(rdir, clfdir)
+
+# same features for all phenotypes
+if nstart == 0:
+    rfolder = f'{dataset}/{cmp_name}_cut_{str(ntr)}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
+    ftem = f'{cmp_name}_cut_{str(ntr)}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'+'/features/'
+else:
+    rfolder = f'{dataset}/{cmp_name}_cut_{str(ntr)}_from{nstart}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
+    ftem = f'{cmp_name}_cut_{str(ntr)}_from{nstart}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'+'/features/'
+    
 rdir = r_rootdir+rfolder
 
 if not os.path.exists(f"{rdir}"):
     os.makedirs(f"{rdir}")
 
+# add phenostr inside clf folder
+clfdir = clfdir+'/'+phenostr
 Result_struct = TOPF.init_result_dir(rdir, clfdir)
 
+
+# check if features are already produced for sex classification project
+if ntr == 132 or ntr == 170 or ntr == 671:
+    fdir = f'/data/project/brainvar_topf_eval/results/classification/feature_before_norm/hcp{nroi}/Gender/' 
+else:
+    fdir = f'/data/project/brainvar_topf_eval/results/classification/hcp{nroi}/Gender/'
+fdir_exist_sex = fdir + ftem
+
+if os.path.exists(f"{fdir_exist_sex}"):
+    Result_struct.featuredir = fdir_exist_sex
 
 ###################### load subject list to be analysed and check if missing values
 with open(file_subject_list) as f:
@@ -158,27 +219,39 @@ print('number of rois used:', nroi)
 # set up machine learning model
 J_model = TOPF.create_ML_julearn_model(clfname, setting_file)
 
-# start prediction: 
-df_test, df_train, df_bp = TOPF.main_TOPF(df_fmri, fmricondition, clfname, nroi, seed, subject_list, df_pheno, df_family_info, phenostr, J_model, Result_struct, feature_type, pcind, ntr, nstart, k_inner, k_outer, threshold)
 
-# calculate scores (defined in metric_list) for test data
-nfold = k_outer
-foldwise = 1  # compute the score for each fold separately
-
-# save scores to scoredir
-scoredir = Result_struct.scoredir
-savepath = eval(Result_struct.scorefname_test)
-
-
-seedlist = [seed] # needs to be a list
-probtype = J_model.probtype
+flip=None 
+clean=None 
+norm=1
+#metric_list = ['balanced_accuracy'] #metric_list = ['accuracy','balanced_accuracy','roc_auc']
 metric_list = J_model.metric_list
-mean_all, mean_seed, df_measure, _ = TOPF.main_compute_prediction_scores(fmricondition, clfname, probtype, Result_struct, metric_list, seedlist, nfold, savepath, foldwise, test=True)
 
-# print
-print('current condition:', fmricondition)
-print('scores of each fold:')
-print(df_measure)
+seedlist = list(np.arange(0,10,1)) # consistent with those used in computation on non-perm data
+m_values = []
 
+# start prediction and compute score: 
+for seed in seedlist:
+    df_test, df_train, df_bp = TOPF.main_TOPF(df_fmri, fmricondition, clfname, nroi, seed, subject_list, df_pheno, df_family_info, phenostr, J_model, Result_struct, feature_type, pcind, ntr, nstart, k_inner, k_outer, threshold,flip, clean, norm, permseed)
+
+    # calculate scores (defined in metric_list) for test data
+    print('cv seed:',seed,'. Measures are computed within each seed over all samples')
+    m_temp, mlist = TOPF.cal_measures(df_test, J_model.probtype, metric_list)  # calculate measures
+    m_values = m_values + m_temp
+
+m_values = np.array(m_values)
+m_values = np.reshape(m_values, [-1, len(mlist)])
+df_measure = pd.DataFrame(data=m_values,columns=mlist)
+df_measure.insert(0,'seed', seedlist)
+print('measures:', df_measure)
+
+# save scores of all seeds and movies (clfdir fixed to svm_gamma_thre0; need to be included in file names later)
+rpdir = r_rootdir + f'perms/{clfdir}_' + rfolder
+if not os.path.exists(f"{rpdir}"):
+    os.makedirs(f"{rpdir}")
+
+score_fname = rpdir + f'/p{permseed}_scores_{fmricondition}.csv'
+df_measure.to_csv(score_fname, header=True)
+
+print('saved computed scores to', score_fname)
 
 

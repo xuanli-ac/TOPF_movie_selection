@@ -13,13 +13,13 @@ configure_logging(level='INFO')
 
 ############## read in arguments 
 
-################################### read from bash ###########################################
+################################### read from bash  ###########################################
 # Project folder
 wkdir = sys.argv[1] # wkdir = '/Users/xli/Desktop/Github/TOPF_evaluation'
 file_subject_list = sys.argv[2] # wkdir+'/data/HCP/subject_list.txt'
 
 # result root dir
-r_rootdir = sys.argv[3] # '/Users/xli/Desktop/Github/TOPF_evaluation/results/classification/'
+r_rootdir = sys.argv[3] # '/Users/xli/Desktop/Github/TOPF_evaluation/results/neo-regression/'
 
 # adding core_functions folder to the system path and import the TOPF module (TOPF.py)
 sys.path.insert(0, wkdir+'/code/core_functions')
@@ -63,7 +63,6 @@ if cutntr <=0:
 else:
     ntr = cutntr # cut to cutntr
 ################################### read from bash ###########################################
-
 
 
 ############################ HCP dataset specific info #######################
@@ -125,18 +124,43 @@ else:
 #^^^^^^^^^^^^^^^^^^^^^ HCP dataset specific info ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    
 
 ##################### set up result directory structure and file names
-if nstart ==0:
-    rfolder = f'{dataset}/{phenostr}/{cmp_name}_cut_{str(ntr)}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
-else:
-    rfolder = f'{dataset}/{phenostr}/{cmp_name}_cut_{str(ntr)}_from{nstart}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
+# # different features for different phenotypes (e.g. stratified )
+# if nstart == 0:
+#     rfolder = f'{dataset}/{phenostr}/{cmp_name}_cut_{str(ntr)}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
+#     ftem = f'{cmp_name}_cut_{str(ntr)}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'+'/features/'
+# else:
+#     rfolder = f'{dataset}/{phenostr}/{cmp_name}_cut_{str(ntr)}_from{nstart}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
+#     ftem = f'{cmp_name}_cut_{str(ntr)}_from{nstart}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'+'/features/'
 
+# same features for all phenotypes
+if nstart == 0:
+    rfolder = f'{dataset}/{cmp_name}_cut_{str(ntr)}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
+    ftem = f'{cmp_name}_cut_{str(ntr)}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'+'/features/'
+else:
+    rfolder = f'{dataset}/{cmp_name}_cut_{str(ntr)}_from{nstart}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'
+    ftem = f'{cmp_name}_cut_{str(ntr)}_from{nstart}_{feature_type}_{pcind}_ko{k_outer}_ki{k_inner}_n{nroi}'+'/features/'
+    
 rdir = r_rootdir+rfolder
 
 if not os.path.exists(f"{rdir}"):
     os.makedirs(f"{rdir}")
 
+# add phenostr inside clf folder
+clfdir = clfdir+'/'+phenostr
 Result_struct = TOPF.init_result_dir(rdir, clfdir)
 
+
+# check if features are already produced for sex classification project
+if ntr == 132 or ntr == 170 or ntr == 671:
+    fdir = f'/data/project/brainvar_topf_eval/results/classification/feature_before_norm/hcp{nroi}/Gender/' 
+else:
+    fdir = f'/data/project/brainvar_topf_eval/results/classification/hcp{nroi}/Gender/'
+fdir_exist_sex = fdir + ftem
+
+if os.path.exists(f"{fdir_exist_sex}"):
+    Result_struct.featuredir = fdir_exist_sex
+
+# otherwise create feature dir (we use sex-balanced splits with family structure controlled), consistent with sex classification project
 
 ###################### load subject list to be analysed and check if missing values
 with open(file_subject_list) as f:

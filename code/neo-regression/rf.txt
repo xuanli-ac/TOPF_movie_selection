@@ -1,0 +1,1 @@
+{'problem_type': 'regression', 'rf__max_features': ['sqrt', 'log2', None], 'rf__n_estimators': [100, 250, 500, 1000], 'scoring': 'neg_mean_absolute_error', 'metric_list': ['pearson','spearman','r2','mean_absolute_error']}
