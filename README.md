@@ -38,9 +38,13 @@ conda install ipykernel
 ### code structure
 1. classification - code for performing sex classification within each movie clip, evaluating performance, significance and feature importance, as well as detail settings of each classification algorithm ('*.txt').
 
-2. crossprediction - code for performing classification across movie clips
+2. neo-regression - code for performing prediction of continous targets (e.g., fluid intelligence scores, PMAT24_A_CR), evaluating performance, significance and feature importance, as well as machine learning settings ('*.txt').
 
-3. movie_feature_extraction - code for extract movie features using the pliers toolbox (McNamara et al., 2017). Movie stimuli can be downloaded at https://db.humanconnectome.org/. 
+3. crossprediction - code for performing classification across movie clips
+
+4. movie_feature_extraction - code for extract movie features using the pliers toolbox (McNamara et al., 2017). Movie stimuli can be downloaded at https://db.humanconnectome.org/. 
+
+5. post-analysis - code for analysis of the effect of inter-subject synchrony on prediction scores with necessary data
 
 ### results
 Examples of results can be found under '/results_summary'.
@@ -53,6 +57,7 @@ For example:
 In Mac/PC terminal:
 ```
 conda activate topf_eval
+cd /wkdir/code/classification
 python3.9 1-run_topf_hcp.py /myproject /myproject/data/HCP/subject_list.txt /myresultdir/ hcp436 436 0 2 moviewise Gender 132 singlePC 1 rf 10 5 myproject/code/classification/rf.txt rf_thre0 0 0
 ```
 On cluster + HTCondor:
